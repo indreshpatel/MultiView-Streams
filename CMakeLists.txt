@@ -1,39 +1,74 @@
-cmake_minimum_required(VERSION 3.28...3.30)
+cmake_minimum_required(VERSION 3.24)
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
+project(obs-dual-vertical-stream VERSION 1.0.0 LANGUAGES CXX)
 
-project(${_name} VERSION ${_version})
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-option(ENABLE_FRONTEND_API "Use obs-frontend-api for UI functionality" OFF)
-option(ENABLE_QT "Use Qt functionality" OFF)
+option(OBS_STUDIO_DIR "Path to OBS Studio source/build install root" "")
 
-include(compilerconfig)
-include(defaults)
-include(helpers)
-
-add_library(${CMAKE_PROJECT_NAME} MODULE)
-
-find_package(libobs REQUIRED)
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
-
-if(ENABLE_FRONTEND_API)
-  find_package(obs-frontend-api REQUIRED)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::obs-frontend-api)
+find_package(Qt6 COMPONENTS Widgets QUIET)
+if(Qt6_FOUND)
+	set(QT_WIDGETS_TARGET Qt6::Widgets)
+else()
+	find_package(Qt5 COMPONENTS Widgets REQUIRED)
+	set(QT_WIDGETS_TARGET Qt5::Widgets)
 endif()
 
-if(ENABLE_QT)
-  find_package(Qt6 COMPONENTS Widgets Core)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets)
-  target_compile_options(
-    ${CMAKE_PROJECT_NAME}
-    PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-quoted-include-in-framework-header -Wno-comma>
-  )
-  set_target_properties(
-    ${CMAKE_PROJECT_NAME}
-    PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON
-  )
+find_package(libobs QUIET)
+find_package(obs-frontend-api QUIET)
+
+add_library(obs-dual-vertical-stream MODULE
+	plugin.cpp
+)
+
+target_compile_definitions(obs-dual-vertical-stream PRIVATE
+	UNICODE
+	_UNICODE
+)
+
+target_link_libraries(obs-dual-vertical-stream PRIVATE
+	${QT_WIDGETS_TARGET}
+)
+
+if(TARGET OBS::libobs)
+	target_link_libraries(obs-dual-vertical-stream PRIVATE OBS::libobs)
+elseif(TARGET libobs)
+	target_link_libraries(obs-dual-vertical-stream PRIVATE libobs)
+elseif(OBS_STUDIO_DIR)
+	target_include_directories(obs-dual-vertical-stream PRIVATE
+		"${OBS_STUDIO_DIR}/libobs"
+		"${OBS_STUDIO_DIR}/UI/obs-frontend-api"
+	)
+	target_link_directories(obs-dual-vertical-stream PRIVATE
+		"${OBS_STUDIO_DIR}/build/libobs/RelWithDebInfo"
+		"${OBS_STUDIO_DIR}/build/UI/obs-frontend-api/RelWithDebInfo"
+		"${OBS_STUDIO_DIR}/build/libobs/Release"
+		"${OBS_STUDIO_DIR}/build/UI/obs-frontend-api/Release"
+	)
+	target_link_libraries(obs-dual-vertical-stream PRIVATE
+		libobs
+		obs-frontend-api
+	)
+else()
+	message(FATAL_ERROR "Could not find libobs. Set CMAKE_PREFIX_PATH or OBS_STUDIO_DIR.")
 endif()
 
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-main.c)
+if(TARGET OBS::frontend-api)
+	target_link_libraries(obs-dual-vertical-stream PRIVATE OBS::frontend-api)
+elseif(TARGET obs-frontend-api)
+	target_link_libraries(obs-dual-vertical-stream PRIVATE obs-frontend-api)
+endif()
 
-set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
+set_target_properties(obs-dual-vertical-stream PROPERTIES
+	PREFIX ""
+	OUTPUT_NAME "obs-dual-vertical-stream"
+)
+
+if(WIN32)
+	set_target_properties(obs-dual-vertical-stream PROPERTIES
+		SUFFIX ".dll"
+	)
+endif()
