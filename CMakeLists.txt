@@ -1,24 +1,39 @@
-cmake_minimum_required(VERSION 3.16)
-project(MultiCanvasLiveEngine VERSION 0.1.0)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-# Ensure C++17 is used
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
 
-# Find OBS (Assuming OBS is installed and environment variable OBS_ROOT is set)
-find_package(OBS REQUIRED)
+project(${_name} VERSION ${_version})
 
-add_library(multi-canvas-engine MODULE
-    src/plugin.cpp
-)
+option(ENABLE_FRONTEND_API "Use obs-frontend-api for UI functionality" OFF)
+option(ENABLE_QT "Use Qt functionality" OFF)
 
-# Link obs-frontend-api and libobs
-target_link_libraries(multi-canvas-engine PRIVATE OBS::libobs OBS::obs-frontend-api)
+include(compilerconfig)
+include(defaults)
+include(helpers)
 
-# Set the output directory to match OBS plugin structure
-set_target_properties(multi-canvas-engine PROPERTIES 
-    PREFIX "" 
-    OUTPUT_NAME "multi-canvas-engine"
-)
+add_library(${CMAKE_PROJECT_NAME} MODULE)
 
-install(TARGETS multi-canvas-engine LIBRARY DESTINATION ${OBS_PLUGIN_DEST})
+find_package(libobs REQUIRED)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
+
+if(ENABLE_FRONTEND_API)
+  find_package(obs-frontend-api REQUIRED)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::obs-frontend-api)
+endif()
+
+if(ENABLE_QT)
+  find_package(Qt6 COMPONENTS Widgets Core)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets)
+  target_compile_options(
+    ${CMAKE_PROJECT_NAME}
+    PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-quoted-include-in-framework-header -Wno-comma>
+  )
+  set_target_properties(
+    ${CMAKE_PROJECT_NAME}
+    PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON
+  )
+endif()
+
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin.cpp)
+
+set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
