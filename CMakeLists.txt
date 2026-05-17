@@ -7,8 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-option(OBS_STUDIO_DIR "Path to OBS Studio source/build install root" "")
-
+set(OBS_STUDIO_DIR "" CACHE PATH "Path to OBS Studio source/build install root")
 find_package(Qt6 COMPONENTS Widgets QUIET)
 if(Qt6_FOUND)
 	set(QT_WIDGETS_TARGET Qt6::Widgets)
