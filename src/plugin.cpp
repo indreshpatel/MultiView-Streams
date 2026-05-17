@@ -1,6 +1,5 @@
 /* clang-format off */
 #include <obs-module.h>
-#include <obs-frontend-api.h>
 #include <obs-output.h>
 #include <obs-encoder.h>
 #include <obs-source.h>
