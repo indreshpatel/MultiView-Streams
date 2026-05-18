@@ -43,7 +43,7 @@ static void start_vertical_stream(FilterData* filter) {
     filter->audio_encoder = obs_audio_encoder_create("ffmpeg_aac", "vertical_audio", nullptr, 0, nullptr);
     
     obs_output_set_video_encoder(filter->secondary_rtmp, filter->video_encoder);
-    obs_output_set_audio_encoder(filter->secondary_rtmp, filter->audio_encoder);
+    obs_output_set_audio_encoder(filter->secondary_rtmp, filter->audio_encoder, 0);
 
     // 3. Start
     obs_output_start(filter->secondary_rtmp);
@@ -130,7 +130,7 @@ static obs_properties_t* get_properties(void* data) {
     obs_properties_add_text(props, "status", "Stream Status", OBS_TEXT_INFO);
     obs_property_t* status = obs_properties_get(props, "status");
     obs_property_set_long_description(status, filter && filter->is_live ? "LIVE" : "OFFLINE");
-    obs_property_set_editable(status, false);
+    obs_property_set_enabled(status, false);
 
     obs_properties_add_text(props, "rtmp_url", "Vertical RTMP URL", OBS_TEXT_DEFAULT);
     obs_properties_add_text(props, "stream_key", "Vertical Stream Key", OBS_TEXT_PASSWORD);
