@@ -134,30 +134,6 @@ static obs_source_frame* filter_video_process(void* data, obs_source_frame* fram
         }
     }
 
-    // 2. Feed Encoded Frames to RTMP
-    if (filter->is_live && filter->video_encoder) {
-        struct encoder_frame enc_frame;
-        memset(&enc_frame, 0, sizeof(enc_frame));
-        enc_frame.type = frame->format;
-        enc_frame.pts = frame->timestamp;
-        
-        // Zero-copy pointer shifting for instantaneous cropping
-        if (frame->format == VIDEO_FORMAT_NV12) {
-            enc_frame.data[0] = frame->data[0] + left_offset;
-            enc_frame.linesize[0] = frame->linesize[0];
-            enc_frame.data[1] = frame->data[1] + (left_offset / 2) * 2;
-            enc_frame.linesize[1] = frame->linesize[1];
-        } else if (frame->format == VIDEO_FORMAT_BGRA || frame->format == VIDEO_FORMAT_RGBA) {
-            enc_frame.data[0] = frame->data[0] + left_offset * 4;
-            enc_frame.linesize[0] = frame->linesize[0];
-        } else {
-            // Fallback safety
-            enc_frame.data[0] = frame->data[0];
-            enc_frame.linesize[0] = frame->linesize[0];
-        }
-
-        obs_encoder_encode_video(filter->video_encoder, &enc_frame);
-    }
     
     return frame;
 }
