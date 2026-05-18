@@ -23,6 +23,7 @@ static const char* filter_get_name(void* data) {
 }
 
 static void* filter_create(obs_data_t* settings, obs_source_t* context) {
+    UNUSED_PARAMETER(settings);
     FilterData* data = (FilterData*)bzalloc(sizeof(FilterData));
     data->context = context;
     return data;
@@ -40,6 +41,7 @@ static void filter_destroy(void* data) {
 // THIS IS WHERE YOU INTERCEPT FRAMES
 static obs_source_frame* filter_video_process(void* data, obs_source_frame* frame) {
     FilterData* filter = (FilterData*)data;
+    UNUSED_PARAMETER(filter);
     
     // 1. Frame Interception:
     // frame->data[0] contains the video buffer.
@@ -56,6 +58,7 @@ static obs_source_frame* filter_video_process(void* data, obs_source_frame* fram
 }
 
 static obs_properties_t* get_properties(void* data) {
+    UNUSED_PARAMETER(data);
     obs_properties_t* props = obs_properties_create();
     obs_properties_add_text(props, "rtmp_url", "Vertical RTMP URL", OBS_TEXT_DEFAULT);
     obs_properties_add_text(props, "stream_key", "Vertical Stream Key", OBS_TEXT_PASSWORD);
@@ -80,7 +83,7 @@ extern "C" {
         filter_info.create = filter_create;
         filter_info.destroy = filter_destroy;
         filter_info.get_properties = get_properties;
-        filter_info.video_filter_process = filter_video_process;
+        filter_info.filter_video = filter_video_process;
 
         obs_register_source(&filter_info);
         return true;
