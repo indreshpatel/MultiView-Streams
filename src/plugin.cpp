@@ -3,7 +3,6 @@
 #include <obs-output.h>
 #include <obs-encoder.h>
 #include <obs-source.h>
-#include <obs-video.h>
 
 #include <string>
 
